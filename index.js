@@ -100,7 +100,7 @@ Object.keys(redashApiKeysPerHost).forEach((redashHost) => {
   controller.hears(`${redashHost}/queries/([0-9]+)#([0-9]+)`, slackMessageEvents, faultTolerantMiddleware(async (bot, message) => {
     const [ originalUrl, queryId, visualizationId ] = message.match
 
-    const body = await request.get({ uri: `${redashHost}/api/queries/${queryId}`, qs: { api_key: redashApiKey }, simple: true })
+    const body = await request.get({ uri: `${redashHostAlias}/api/queries/${queryId}`, qs: { api_key: redashApiKey }, simple: true })
     const query = JSON.parse(body)
     const visualization = query.visualizations.find(vis => vis.id.toString() === visualizationId)
 
@@ -116,23 +116,23 @@ Object.keys(redashApiKeysPerHost).forEach((redashHost) => {
   controller.hears(`${redashHost}/dashboard/([^?/|>]+)`, slackMessageEvents, faultTolerantMiddleware(async (bot, message) => {
     const [ originalUrl, dashboardId ] = message.match
 
-    const body = await request.get({ uri: `${redashHost}/api/dashboards/${dashboardId}`, qs: { api_key: redashApiKey }, simple: true })
+    const body = await request.get({ uri: `${redashHostAlias}/api/dashboards/${dashboardId}`, qs: { api_key: redashApiKey }, simple: true })
     const dashboard = JSON.parse(body)
 
     const filename = `${dashboard.name}-dashboard-${dashboardId}.png`
 
     bot.reply(message, `Taking screenshot of ${originalUrl}`)
     bot.botkit.log(dashboard.public_url)
-    const output = await takeScreenshot(dashboard.public_url)
+    const output = await takeScreenshot(dashboard.public_url.replace(redashHost, redashHostAlias))
     uploadFile(message.channel, filename, output)
   }))
 
   controller.hears(`${redashHost}/queries/([0-9]+)(?:#table)?`, slackMessageEvents, faultTolerantMiddleware(async (bot, message) => {
     const [ originalUrl, queryId ] = message.match
-    const body = await request.get({ uri: `${redashHost}/api/queries/${queryId}`, qs: { api_key: redashApiKey }, simple: true })
+    const body = await request.get({ uri: `${redashHostAlias}/api/queries/${queryId}`, qs: { api_key: redashApiKey }, simple: true })
     const query = JSON.parse(body)
 
-    const result = JSON.parse(await request.get({ uri: `${redashHost}/api/queries/${queryId}/results.json`, qs: { api_key: redashApiKey }, simple: true })).query_result.data
+    const result = JSON.parse(await request.get({ uri: `${redashHostAlias}/api/queries/${queryId}/results.json`, qs: { api_key: redashApiKey }, simple: true })).query_result.data
 
     const rows = result.rows.map(row => {
       const converted = {}
