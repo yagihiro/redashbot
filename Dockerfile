@@ -1,4 +1,4 @@
-FROM node:8.11.1-slim
+FROM node:10.10-slim
 
 RUN apt-get update && apt-get install -yq libgconf-2-4
 
