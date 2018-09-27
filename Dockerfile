@@ -22,7 +22,9 @@ ADD package-lock.json /opt/redashbot
 RUN npm install
 ADD . /opt/redashbot
 
+RUN npm install -g forever
+
 ENV CHROMIUM_BROWSER_PATH=google-chrome-unstable
 
-ENTRYPOINT [ "node" ]
+ENTRYPOINT [ "forever" ]
 CMD [ "index.js" ]
