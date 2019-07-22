@@ -1,7 +1,7 @@
 "use strict"
 
 const Botkit = require("botkit")
-const SlackAdapter = require('botbuilder-adapter-slack')
+const { SlackAdapter } = require('botbuilder-adapter-slack')
 const puppeteer = require("puppeteer")
 const tempfile = require("tempfile")
 const fs = require("fs")
