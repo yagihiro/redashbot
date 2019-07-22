@@ -1,6 +1,7 @@
 "use strict"
 
 const Botkit = require("botkit")
+const SlackAdapter = require('botbuilder-adapter-slack')
 const puppeteer = require("puppeteer")
 const tempfile = require("tempfile")
 const fs = require("fs")
@@ -45,10 +46,16 @@ const parseApiKeysPerHost = () => {
 
 const redashApiKeysPerHost = parseApiKeysPerHost()
 const slackBotToken = process.env.SLACK_BOT_TOKEN
+const slackVerificationToken = process.env.SLACK_VERIFICATION_TOKEN
 const slackMessageEvents = process.env.SLACK_MESSAGE_EVENTS || DEFAULT_SLACK_MESSAGE_EVENTS
 
-const controller = Botkit.slackbot({
-  debug: !!process.env.DEBUG
+const adapter = new SlackAdapter({
+    verificationToken: slackVerificationToken,
+    botToken: slackBotToken
+})
+
+const controller = new Botkit({
+    adapter: adapter
 })
 
 controller.spawn({
@@ -62,7 +69,7 @@ const faultTolerantMiddleware = (func) => {
       bot.botkit.log("ok")
     } catch (err) {
       const msg = `Something wrong happend : ${err}`
-      bot.reply(message, msg)
+      await bot.reply(message, msg)
       bot.botkit.log.error(msg)
     }
   }
@@ -107,7 +114,7 @@ Object.keys(redashApiKeysPerHost).forEach((redashHost) => {
     const embedUrl = `${redashHostAlias}/embed/query/${queryId}/visualization/${visualizationId}?api_key=${redashApiKey}`
     const filename = `${query.name}-${visualization.name}-query-${queryId}-visualization-${visualizationId}.png`
 
-    bot.reply(message, `Taking screenshot of ${originalUrl}`)
+    await bot.reply(message, `Taking screenshot of ${originalUrl}`)
     bot.botkit.log(embedUrl)
     const output = await takeScreenshot(embedUrl)
     uploadFile(message.channel, filename, output)
@@ -121,7 +128,7 @@ Object.keys(redashApiKeysPerHost).forEach((redashHost) => {
 
     const filename = `${dashboard.name}-dashboard-${dashboardId}.png`
 
-    bot.reply(message, `Taking screenshot of ${originalUrl}`)
+    await bot.reply(message, `Taking screenshot of ${originalUrl}`)
     bot.botkit.log(dashboard.public_url)
     const output = await takeScreenshot(dashboard.public_url.replace(redashHost, redashHostAlias))
     uploadFile(message.channel, filename, output)
@@ -150,6 +157,6 @@ Object.keys(redashApiKeysPerHost).forEach((redashHost) => {
     const table = new Table([cols].concat(rows))
     let tableMessage = '```' + table.toString() + '```'
     tableMessage = tableMessage.split('\n').map(line => line.trimRight()).join('\n')
-    bot.reply(message, `${query.name}\n${tableMessage}`)
+    await bot.reply(message, `${query.name}\n${tableMessage}`)
   }))
 })
